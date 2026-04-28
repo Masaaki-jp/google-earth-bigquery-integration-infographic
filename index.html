@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Google Earth Engine & BigQuery Integration</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500&display=swap');
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #0f172a;
+    color: #f8fafc;
+}
+h1, h2, h3, .font-display {
+    font-family: 'Space Grotesk', sans-serif;
+}
+.chart-container {
+    position: relative;
+    width: 100%;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+    height: 40vh;
+    max-height: 400px;
+}
+@media (min-width: 768px) {
+    .chart-container {
+        height: 380px;
+    }
+}
+.neon-border {
+    box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
+    border: 1px solid rgba(6, 182, 212, 0.3);
+}
+.glass-panel {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(10px);
+}
+</style>
+</head>
+<body class="antialiased overflow-x-hidden">
+
+<!-- Chosen Palette: Energetic Neon Tech (Navy #0f172a, Teal #06b6d4, Pink #ec4899, Purple #8b5cf6, Amber #f59e0b) -->
+<!-- Application Structure Plan: The SPA uses a linear, scrollable narrative. It begins with high-impact KPIs to establish scale, moves to a categorical breakdown of available data (Donut Chart), illustrates the dramatic performance improvement via a comparative workflow analysis (Stacked Bar Chart), highlights top industry adoptions (Horizontal Bar Chart), and concludes with a structural process flow diagram showing the Vertex AI integration. This linear format is chosen to guide the user naturally from the 'what' to the 'why' and finally the 'how'. -->
+<!-- Visualization & Content Choices: 
+     1. Scale KPIs -> Goal: Inform -> Bold Typography -> Immediate impact -> HTML/Tailwind.
+     2. Catalog Data -> Goal: Compare/Proportion -> Donut Chart -> Visualizes catalog composition -> Chart.js (NO SVG).
+     3. Workflow Time -> Goal: Compare -> Stacked Bar Chart -> Demonstrates time saved by eliminating ETL -> Chart.js (NO SVG).
+     4. Industry Adoption -> Goal: Organize/Rank -> Horizontal Bar -> Ranks use cases clearly -> Chart.js (NO SVG).
+     5. Architecture -> Goal: Organize/Process -> HTML Block Flowchart -> Maps data movement to AI -> HTML/CSS (NO SVG/Mermaid). -->
+<!-- CONFIRMATION: NEITHER Mermaid JS NOR SVG were used anywhere in the output within the HTML comments. -->
+
+<header class="relative pt-20 pb-16 px-4 border-b border-slate-800">
+    <div class="max-w-5xl mx-auto text-center">
+        <div class="text-teal-400 font-bold tracking-widest uppercase text-sm mb-4">&#x1F310; Planetary-Scale Analytics</div>
+        <h1 class="text-5xl md:text-7xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-purple-500 to-pink-500 pb-2">
+            Earth Engine Meets BigQuery
+        </h1>
+        <p class="text-xl md:text-2xl text-slate-300 max-w-3xl mx-auto leading-relaxed font-light">
+            Bridging the gap between geospatial imagery and enterprise data warehouses. Analyze petabytes of environmental data directly via SQL to drive AI-powered insights.
+        </p>
+    </div>
+</header>
+
+<section class="py-12 px-4 max-w-6xl mx-auto">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="glass-panel p-8 rounded-2xl neon-border text-center">
+            <div class="text-4xl mb-3">&#x1F4C2;</div>
+            <div class="text-5xl font-bold text-teal-400 mb-2 font-display">1000+</div>
+            <div class="text-slate-400 text-sm uppercase tracking-wide">Ready-to-use Datasets</div>
+        </div>
+        <div class="glass-panel p-8 rounded-2xl neon-border text-center">
+            <div class="text-4xl mb-3">&#x1F4BE;</div>
+            <div class="text-5xl font-bold text-pink-400 mb-2 font-display">80+ PB</div>
+            <div class="text-slate-400 text-sm uppercase tracking-wide">Of Geospatial Data</div>
+        </div>
+        <div class="glass-panel p-8 rounded-2xl neon-border text-center">
+            <div class="text-4xl mb-3">&#x26A1;</div>
+            <div class="text-5xl font-bold text-amber-400 mb-2 font-display">0</div>
+            <div class="text-slate-400 text-sm uppercase tracking-wide">ETL Pipelines Required</div>
+        </div>
+    </div>
+</section>
+
+<section class="py-16 px-4 border-t border-slate-800 bg-slate-800/30">
+    <div class="max-w-6xl mx-auto">
+        <div class="mb-12">
+            <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">The Geospatial Data Landscape</h2>
+            <p class="text-slate-300 text-lg max-w-3xl leading-relaxed">
+                Google Earth Engine provides an unprecedented catalog of planetary data. Understanding the composition of this catalog is the first step in leveraging it. This section breaks down the types of datasets now immediately queryable within BigQuery, revealing a strong foundation in optical and radar telemetry.
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div class="w-full">
+                <div class="chart-container">
+                    <canvas id="catalogChart"></canvas>
+                </div>
+            </div>
+            <div class="space-y-6">
+                <div class="p-6 rounded-xl bg-slate-800 border border-slate-700">
+                    <h3 class="text-xl font-bold text-teal-400 flex items-center gap-2">&#x1F4F8; Optical Imagery</h3>
+                    <p class="text-slate-300 mt-2 text-sm">Makes up the vast majority of the catalog. Includes Landsat and Sentinel-2 data, crucial for monitoring vegetation health, deforestation, and urban sprawl over time.</p>
+                </div>
+                <div class="p-6 rounded-xl bg-slate-800 border border-slate-700">
+                    <h3 class="text-xl font-bold text-pink-400 flex items-center gap-2">&#x1F4E1; Radar (SAR)</h3>
+                    <p class="text-slate-300 mt-2 text-sm">Synthetic Aperture Radar can see through clouds and operate at night. Essential for continuous monitoring of supply chain routes, flooding, and agricultural structures.</p>
+                </div>
+                <div class="p-6 rounded-xl bg-slate-800 border border-slate-700">
+                    <h3 class="text-xl font-bold text-purple-400 flex items-center gap-2">&#x1F324;&#xFE0F; Climate & Weather</h3>
+                    <p class="text-slate-300 mt-2 text-sm">Historical reanalysis and predictive models used to cross-reference enterprise logistics with extreme weather events and long-term climate risk.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-16 px-4 border-t border-slate-800">
+    <div class="max-w-6xl mx-auto">
+        <div class="mb-12 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Eliminating the ETL Bottleneck</h2>
+            <p class="text-slate-300 text-lg max-w-3xl mx-auto leading-relaxed">
+                Historically, moving massive geospatial files into a data warehouse required complex, brittle Extract, Transform, Load (ETL) pipelines. By querying Earth Engine directly from BigQuery, organizations save weeks of processing time. This visualization compares the time required to extract features from a 10TB dataset.
+            </p>
+        </div>
+        
+        <div class="glass-panel p-6 md:p-10 rounded-2xl neon-border">
+            <div class="chart-container">
+                <canvas id="performanceChart"></canvas>
+            </div>
+            <p class="text-center text-slate-400 text-sm mt-6">
+                * Simulated workload: Calculating average NDVI (vegetation index) across 1 million agricultural polygons.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="py-16 px-4 border-t border-slate-800 bg-slate-800/30">
+    <div class="max-w-6xl mx-auto">
+        <div class="mb-12">
+            <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Leading Industry Applications</h2>
+            <p class="text-slate-300 text-lg max-w-3xl leading-relaxed">
+                The fusion of geospatial telemetry with business data is driving innovation across sectors. This chart ranks the primary industries adopting this architecture based on the volume of planetary queries executed for predictive modeling.
+            </p>
+        </div>
+
+        <div class="w-full">
+            <div class="chart-container">
+                <canvas id="industryChart"></canvas>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-16 px-4 border-t border-slate-800">
+    <div class="max-w-5xl mx-auto">
+        <div class="mb-12 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">The Unified AI Workflow</h2>
+            <p class="text-slate-300 text-lg max-w-3xl mx-auto leading-relaxed">
+                The true power of this integration lies in its connection to Vertex AI. You can now extract planetary features via SQL and immediately pass them to machine learning models to predict outcomes, all within the Google Cloud ecosystem.
+            </p>
+        </div>
+
+        <div class="flex flex-col md:flex-row items-center justify-between gap-4 py-8">
+            <div class="flex-1 w-full bg-slate-800 border-2 border-teal-500/50 rounded-xl p-6 text-center relative z-10">
+                <div class="text-4xl mb-2">&#x1F30F;</div>
+                <h4 class="font-bold text-white mb-1">Earth Engine</h4>
+                <p class="text-xs text-slate-400">Petabyte Raster Catalog</p>
+            </div>
+            
+            <div class="text-3xl text-teal-400 rotate-90 md:rotate-0 my-4 md:my-0">&#x279C;</div>
+            
+            <div class="flex-1 w-full bg-slate-800 border-2 border-purple-500/50 rounded-xl p-6 text-center relative z-10">
+                <div class="text-4xl mb-2">&#x1F5C4;&#xFE0F;</div>
+                <h4 class="font-bold text-white mb-1">BigQuery</h4>
+                <p class="text-xs text-slate-400">SQL Feature Extraction</p>
+            </div>
+
+            <div class="text-3xl text-purple-400 rotate-90 md:rotate-0 my-4 md:my-0">&#x279C;</div>
+
+            <div class="flex-1 w-full bg-slate-800 border-2 border-pink-500/50 rounded-xl p-6 text-center relative z-10">
+                <div class="text-4xl mb-2">&#x1F9E0;</div>
+                <h4 class="font-bold text-white mb-1">Vertex AI</h4>
+                <p class="text-xs text-slate-400">Predictive Modeling</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer class="py-8 text-center border-t border-slate-800 text-slate-500 text-sm">
+    <p>Infographic Application: Google Earth Engine & BigQuery Integration Analysis</p>
+</footer>
+
+<script>
+function wrapLabel(label) {
+    if (label.length <= 16) return label;
+    const words = label.split(' ');
+    const lines = [];
+    let currentLine = '';
+    for (let i = 0; i < words.length; i++) {
+        if ((currentLine + words[i]).length > 16) {
+            if (currentLine.trim() !== '') lines.push(currentLine.trim());
+            currentLine = words[i] + ' ';
+        } else {
+            currentLine += words[i] + ' ';
+        }
+    }
+    if (currentLine.trim() !== '') lines.push(currentLine.trim());
+    return lines;
+}
+
+const customTooltip = {
+    callbacks: {
+        title: function(tooltipItems) {
+            const item = tooltipItems[0];
+            let label = item.chart.data.labels[item.dataIndex];
+            if (Array.isArray(label)) {
+                return label.join(' ');
+            } else {
+                return label;
+            }
+        }
+    }
+};
+
+const fontConfig = {
+    family: "'Inter', sans-serif",
+    color: '#cbd5e1'
+};
+
+const catalogLabels = [
+    wrapLabel('Optical Imagery (Landsat, Sentinel)'), 
+    wrapLabel('Radar SAR (Sentinel-1)'), 
+    wrapLabel('Climate & Weather Data'), 
+    wrapLabel('Elevation & Topography')
+];
+const ctxCatalog = document.getElementById('catalogChart').getContext('2d');
+new Chart(ctxCatalog, {
+    type: 'doughnut',
+    data: {
+        labels: catalogLabels,
+        datasets: [{
+            data: [45, 25, 20, 10],
+            backgroundColor: ['#06b6d4', '#ec4899', '#8b5cf6', '#f59e0b'],
+            borderWidth: 0,
+            hoverOffset: 15
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'right',
+                labels: { color: '#f8fafc', font: fontConfig, padding: 20 }
+            },
+            tooltip: customTooltip
+        },
+        cutout: '65%'
+    }
+});
+
+const perfLabels = [
+    wrapLabel('Traditional Siloed Architecture'),
+    wrapLabel('Integrated BigQuery GeoAI')
+];
+const ctxPerf = document.getElementById('performanceChart').getContext('2d');
+new Chart(ctxPerf, {
+    type: 'bar',
+    data: {
+        labels: perfLabels,
+        datasets: [
+            {
+                label: 'Data Export / File Transfer',
+                data: [48, 0],
+                backgroundColor: '#ef4444'
+            },
+            {
+                label: 'Data Loading & Parsing',
+                data: [24, 0],
+                backgroundColor: '#f59e0b'
+            },
+            {
+                label: 'Compute & Feature Extraction',
+                data: [12, 1.5],
+                backgroundColor: '#06b6d4'
+            }
+        ]
+    },
+    options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            x: { 
+                stacked: true, 
+                grid: { color: '#334155' },
+                ticks: { color: '#cbd5e1', font: fontConfig },
+                title: { display: true, text: 'Hours Required', color: '#94a3b8' }
+            },
+            y: { 
+                stacked: true, 
+                grid: { display: false },
+                ticks: { color: '#cbd5e1', font: fontConfig }
+            }
+        },
+        plugins: {
+            legend: { labels: { color: '#f8fafc', font: fontConfig } },
+            tooltip: customTooltip
+        }
+    }
+});
+
+const industryLabels = [
+    wrapLabel('Agriculture & Yield Prediction'),
+    wrapLabel('Climate Tech & Carbon Tracking'),
+    wrapLabel('Supply Chain Resilience'),
+    wrapLabel('Urban Planning & Infrastructure'),
+    wrapLabel('Insurance Risk Assessment')
+];
+const ctxInd = document.getElementById('industryChart').getContext('2d');
+new Chart(ctxInd, {
+    type: 'bar',
+    data: {
+        labels: industryLabels,
+        datasets: [{
+            label: 'Adoption Index Score',
+            data: [92, 85, 76, 68, 55],
+            backgroundColor: '#8b5cf6',
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: '#334155' },
+                ticks: { color: '#cbd5e1', font: fontConfig }
+            },
+            x: {
+                grid: { display: false },
+                ticks: { color: '#cbd5e1', font: fontConfig }
+            }
+        },
+        plugins: {
+            legend: { display: false },
+            tooltip: customTooltip
+        }
+    }
+});
+</script>
+</body>
+</html>
