@@ -1,0 +1,1 @@
+# google-earth-bigquery-integration-infographic
